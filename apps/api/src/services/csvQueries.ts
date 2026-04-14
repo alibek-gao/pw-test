@@ -1,8 +1,17 @@
 import type { PrismaClient } from "@repo/database";
 import type { DomainCountsInput, ListRecordsInput } from "../schemas/csv.js";
 
-const getJobScopedWhere = (jobId?: string) =>
-  jobId ? { importJobId: jobId } : {};
+const visibleImportStatuses = ["COMPLETED", "COMPLETED_WITH_ERRORS"] as const;
+
+// Keeps partial failed imports out of reads; optimize later with latest-job scoping or a denormalized visibility flag if needed.
+const getVisibleRecordsWhere = (jobId?: string) => ({
+  ...(jobId ? { importJobId: jobId } : {}),
+  importJob: {
+    status: {
+      in: [...visibleImportStatuses],
+    },
+  },
+});
 
 type CountByAiModel = {
   aiModelMentioned: string;
@@ -34,7 +43,7 @@ export const listRecords = async (
   input: ListRecordsInput,
 ) => {
   const where = {
-    ...getJobScopedWhere(input.jobId),
+    ...getVisibleRecordsWhere(input.jobId),
     ...(input.filters?.aiModelMentioned
       ? { aiModelMentioned: input.filters.aiModelMentioned }
       : {}),
@@ -67,7 +76,7 @@ export const listRecords = async (
 };
 
 export const getSummary = async (prisma: PrismaClient, jobId?: string) => {
-  const where = getJobScopedWhere(jobId);
+  const where = getVisibleRecordsWhere(jobId);
 
   const [
     totalRecords,
@@ -154,7 +163,7 @@ export const getDomainCounts = (
   prisma.urlRecord
     .groupBy({
       by: ["rootDomain"],
-      where: getJobScopedWhere(input?.jobId),
+      where: getVisibleRecordsWhere(input?.jobId),
       _count: { _all: true },
       orderBy: { _count: { rootDomain: "desc" } },
       take: input?.limit ?? 15,
@@ -170,7 +179,7 @@ export const getLastUpdatedSeries = (prisma: PrismaClient, jobId?: string) =>
   prisma.urlRecord
     .groupBy({
       by: ["lastUpdated"],
-      where: getJobScopedWhere(jobId),
+      where: getVisibleRecordsWhere(jobId),
       _count: { _all: true },
       orderBy: { lastUpdated: "asc" },
     })

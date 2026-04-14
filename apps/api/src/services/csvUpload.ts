@@ -114,10 +114,18 @@ export const importUrlCsv = async (
       },
     });
   } catch (error) {
+    await prisma.urlRecord.deleteMany({
+      where: { importJobId: importJob.id },
+    });
+    await prisma.importError.deleteMany({
+      where: { importJobId: importJob.id },
+    });
     await prisma.importJob.update({
       where: { id: importJob.id },
       data: {
         status: ImportStatus.FAILED,
+        processedRows: 0,
+        failedRows: 0,
         errorMessage:
           error instanceof Error ? error.message : "Unknown CSV import error.",
         completedAt: new Date(),
