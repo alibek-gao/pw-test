@@ -1,8 +1,8 @@
 import { router } from "../trpc.js";
-import { helloRouter } from "./hello.js";
+import { csvRouter } from "./csv.js";
 
 export const appRouter = router({
-  hello: helloRouter,
+  csv: csvRouter,
 });
 
 export type AppRouter = typeof appRouter;

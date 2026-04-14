@@ -34,6 +34,18 @@ export default function Home() {
           </>
         ) : null}
       </section>
+      <h1>CSV Upload</h1>
+      <section>
+        <h2>CSV upload settings</h2>
+        {isCsvConfigLoading ? <p>Loading upload settings...</p> : null}
+        {csvConfigError ? <p>Could not load upload settings.</p> : null}
+        {csvConfig ? (
+          <>
+            <p>Maximum CSV upload size: {formatBytes(csvConfig.maxCsvUploadBytes)}</p>
+            <p>Expected columns: {csvConfig.expectedHeaders.length}</p>
+          </>
+        ) : null}
+      </section>
     </div>
   );
 }
