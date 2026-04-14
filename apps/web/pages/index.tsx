@@ -86,9 +86,7 @@ export default function Home() {
             <dt>Unique root domains</dt>
             <dd>{summary.uniqueRootDomains}</dd>
             <dt>Average visibility score</dt>
-            <dd>
-              {summary.averageVisibilityScore?.toFixed(1) ?? "No data"}
-            </dd>
+            <dd>{summary.averageVisibilityScore?.toFixed(1) ?? "No data"}</dd>
             <dt>Total citations</dt>
             <dd>{summary.totalCitations}</dd>
             <dt>Total mentions</dt>

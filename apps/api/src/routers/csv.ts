@@ -35,9 +35,11 @@ export const csvRouter = router({
     .input(listRecordsInput)
     .query(({ ctx, input }) => listRecords(ctx.prisma, input)),
 
-  summary: publicProcedure.input(jobScopedInput).query(async ({ ctx, input }) => {
-    return getSummary(ctx.prisma, input?.jobId);
-  }),
+  summary: publicProcedure
+    .input(jobScopedInput)
+    .query(async ({ ctx, input }) => {
+      return getSummary(ctx.prisma, input?.jobId);
+    }),
 
   domainCounts: publicProcedure
     .input(domainCountsInput)

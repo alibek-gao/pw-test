@@ -147,7 +147,10 @@ export const getSummary = async (prisma: PrismaClient, jobId?: string) => {
   };
 };
 
-export const getDomainCounts = (prisma: PrismaClient, input: DomainCountsInput) =>
+export const getDomainCounts = (
+  prisma: PrismaClient,
+  input: DomainCountsInput,
+) =>
   prisma.urlRecord
     .groupBy({
       by: ["rootDomain"],
