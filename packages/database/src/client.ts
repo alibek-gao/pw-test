@@ -28,7 +28,8 @@ const globalForPrisma = global as typeof global & {
 export const prisma: PrismaClientSingleton =
   globalForPrisma.prismaGlobal ?? prismaClientSingleton();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prismaGlobal = prisma;
+if (process.env.NODE_ENV !== "production")
+  globalForPrisma.prismaGlobal = prisma;
 
 export * from "../generated/prisma/client.js";
 

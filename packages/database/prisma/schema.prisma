@@ -12,8 +12,79 @@ datasource db {
   provider = "postgresql"
 }
 
-model User { 
-  id    Int     @id @default(autoincrement()) 
+enum ImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  COMPLETED_WITH_ERRORS
+  FAILED
+}
+
+model ImportJob {
+  id            String       @id @default(cuid())
+  fileName      String
+  status        ImportStatus @default(PENDING)
+  totalRows     Int?
+  processedRows Int          @default(0)
+  failedRows    Int          @default(0)
+  errorMessage  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  records UrlRecord[]
+  errors  ImportError[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model UrlRecord {
+  id                  String    @id @default(cuid())
+  importJobId         String
+  importJob           ImportJob @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+  url                 String
+  hostname            String
+  rootDomain          String
+  title               String
+  aiModelMentioned    String
+  citationsCount      Int
+  sentiment           String
+  visibilityScore     Int
+  competitorMentioned String
+  queryCategory       String
+  lastUpdated         DateTime
+  trafficEstimate     Int
+  domainAuthority     Int
+  mentionsCount       Int
+  positionInResponse  Int
+  responseType        String
+  geographicRegion    String
+  createdAt           DateTime  @default(now())
+
+  @@index([importJobId])
+  @@index([rootDomain])
+  @@index([lastUpdated])
+  @@index([aiModelMentioned])
+  @@index([sentiment])
+  @@index([geographicRegion])
+}
+
+model ImportError {
+  id          String    @id @default(cuid())
+  importJobId String
+  importJob   ImportJob @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+  rowNumber   Int
+  message     String
+  rawRow      Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([importJobId])
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
   email String  @unique
   name  String?
-} 
+}
