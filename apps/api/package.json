@@ -8,14 +8,17 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "test": "pnpm run build && node --test \"dist/**/*.test.js\""
   },
   "dependencies": {
     "@fastify/cors": "^8.4.0",
+    "@repo/database": "workspace:*",
     "@trpc/server": "^10.45.0",
+    "csv-parse": "^6.2.1",
     "fastify": "^4.24.3",
-    "zod": "^3.22.4",
-    "@repo/database": "workspace:*"
+    "tldts": "^7.0.28",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
@@ -24,4 +27,4 @@
     "tsx": "^4.1.4",
     "typescript": "^5.2.2"
   }
-} 
+}
