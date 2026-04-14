@@ -13,16 +13,19 @@ Your task is to create a **CSV Upload and Data Management System** that demonstr
 ### Core Requirements
 
 **1. CSV File Upload Interface**
+
 - Create a file upload component that accepts CSV files (`urls.csv`)
 - Include proper file validation (file type, size limits, etc.)
 - Show upload progress and success/error states (optional)
 
 **2. Backend API Integration**
+
 - Build a tRPC endpoint to handle CSV content
 - Store the parsed data in the PostgreSQL database using Prisma
 - Create a database schema for storing the data
 
 **3. Data Display & Management**
+
 - Display uploaded CSV data in a well-designed table on the main page
 - Include features like pagination, sorting, or filtering
 - Group by domain, show a little chart of occurences per website
@@ -42,7 +45,7 @@ Your task is to create a **CSV Upload and Data Management System** that demonstr
 ✅ **Database Design**: Thoughtful Prisma schema and data modeling  
 ✅ **User Experience**: Intuitive interface with proper loading states and error handling  
 ✅ **Error Handling**: Robust error management throughout the application  
-✅ **Creativity**: Your choice of styling, additional features, and problem-solving approach  
+✅ **Creativity**: Your choice of styling, additional features, and problem-solving approach
 
 ### Bonus Points
 
@@ -71,6 +74,7 @@ cd promptwatch-assignment
 ```
 
 This allows you to:
+
 - Work on your solution locally
 - Commit your progress as you build features
 - Share your completed work by creating a zip file or new repository
@@ -95,23 +99,27 @@ This is a **Turborepo monorepo** with a complete full-stack setup:
 ### Tech Stack
 
 **Frontend (Next.js)**
+
 - ⚛️ React 18 with TypeScript
 - 🔄 tRPC for type-safe API calls
 - 🎨 Pages Router (ready for your UI framework of choice)
 
 **Backend (Fastify + tRPC)**
+
 - ⚡ Fastify server for high performance
 - 🔄 tRPC for end-to-end type safety
 - 📝 TypeScript throughout
 - 🛡️ CORS configured for development
 
 **Database & ORM**
+
 - 🐘 PostgreSQL database
 - 🔄 Prisma ORM with full TypeScript support
 - 🌱 Database seeding capabilities
 - 📦 Migration system ready
 
 **Development Experience**
+
 - 🏗️ Turborepo for fast builds and caching
 - 🔧 ESLint + Prettier for code quality
 - 🐳 Docker Compose for easy local setup
@@ -121,7 +129,7 @@ This is a **Turborepo monorepo** with a complete full-stack setup:
 
 ### Prerequisites
 
-- **Node.js** 18+ 
+- **Node.js** 18+
 - **PNPM** (recommended) or npm/yarn
 - **Docker** & **Docker Compose**
 
@@ -140,7 +148,8 @@ docker-compose up -d
 ```
 
 The database will be available at `localhost:5432` with:
-- **Database**: `repo_development` 
+
+- **Database**: `repo_development`
 - **Username**: `repo`
 - **Password**: `repo`
 
@@ -175,6 +184,7 @@ pnpm run dev
 ```
 
 This starts:
+
 - 🌐 **Frontend**: http://localhost:3000
 - 🚀 **API**: http://localhost:4000
 - 📡 **tRPC endpoint**: http://localhost:4000/trpc
@@ -183,30 +193,35 @@ This starts:
 ## 📂 Project Structure Explained
 
 ### `apps/web/` - Next.js Frontend
+
 - **Pages Router** setup with TypeScript
 - **tRPC client** configured for type-safe API calls
 - Ready for your choice of UI framework (Tailwind, Material-UI, etc.)
 - Connected to the backend via tRPC
 
 ### `apps/api/` - Backend API
+
 - **Fastify server** for high performance
 - **tRPC routers** for type-safe API endpoints
 - **CORS** enabled for local development
 - Health check endpoint included
 
 ### `packages/database/` - Database Layer
+
 - **Prisma ORM** with PostgreSQL
 - Database schema in `prisma/schema/main.prisma`
 - Seeding script in `src/seed.ts`
 - Generated TypeScript types
 
 ### `packages/config-*/` - Shared Configuration
+
 - **ESLint configs** for consistent code style
 - **TypeScript configs** shared across the monorepo
 
 ## 🛠️ Available Scripts
 
 ### Root Level Scripts
+
 ```bash
 pnpm run dev          # Start all development servers
 pnpm run build        # Build all apps and packages
@@ -221,6 +236,7 @@ pnpm run generate         # Generate Prisma client
 ```
 
 ### Individual App Scripts
+
 ```bash
 # Frontend (from apps/web/)
 pnpm run dev          # Start Next.js dev server
@@ -236,6 +252,7 @@ pnpm run start        # Start production build
 ## 🗄️ Database Operations
 
 ### Viewing Your Data
+
 ```bash
 # Open Prisma Studio to browse your database
 cd packages/database
@@ -243,11 +260,13 @@ pnpm run studio
 ```
 
 ### Schema Changes
+
 1. Modify `packages/database/prisma/schema/main.prisma`
 2. Run `pnpm run db:push` (development) or create migration
 3. Run `pnpm run generate` to update TypeScript types
 
 ### Adding Sample Data
+
 Edit `packages/database/src/seed.ts` and run `pnpm run db:seed`
 
 ## 🎯 What You Can Build
@@ -255,7 +274,7 @@ Edit `packages/database/src/seed.ts` and run `pnpm run db:seed`
 This foundation is perfect for building:
 
 - **📊 Dashboard Applications** - Analytics, admin panels, data visualization
-- **🛒 E-commerce Platforms** - Product catalogs, shopping carts, user management  
+- **🛒 E-commerce Platforms** - Product catalogs, shopping carts, user management
 - **📝 Content Management** - Blogs, documentation, media libraries
 - **👥 Social Platforms** - User profiles, feeds, messaging systems
 - **🎮 Real-time Applications** - Chat apps, collaborative tools, games
@@ -264,6 +283,7 @@ This foundation is perfect for building:
 ## 🔧 Customization & Extension
 
 ### Adding UI Components
+
 ```bash
 # Example: Add Tailwind CSS
 cd apps/web
@@ -272,11 +292,13 @@ pnpm tailwindcss init -p
 ```
 
 ### Adding New API Endpoints
+
 1. Create new router in `apps/api/src/routers/`
 2. Add to `apps/api/src/routers/index.ts`
 3. Use in frontend with full type safety!
 
 ### Database Models
+
 Add models to `packages/database/prisma/schema/main.prisma`:
 
 ```prisma
@@ -298,6 +320,7 @@ model Post {
 ## 🐛 Troubleshooting
 
 ### Database Connection Issues
+
 ```bash
 # Check if PostgreSQL is running
 docker-compose ps
@@ -311,11 +334,13 @@ docker-compose logs postgres_database
 ```
 
 ### Port Conflicts
+
 - Frontend (3000): Change in `apps/web/package.json`
 - Backend (4000): Set `PORT` environment variable
 - Database (5432): Change in `packages/docker-compose/docker-compose.yml`
 
 ### Build Issues
+
 ```bash
 # Clean and reinstall
 rm -rf node_modules **/**/node_modules pnpm-lock.yaml

@@ -1,4 +1,4 @@
-import { router, publicProcedure } from "../trpc";
+import { router, publicProcedure } from "../trpc.js";
 
 export const helloRouter = router({
   world: publicProcedure.query(async () => {

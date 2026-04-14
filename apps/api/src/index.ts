@@ -1,11 +1,11 @@
 import Fastify from "fastify";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import cors from "@fastify/cors";
-import { appRouter } from "./routers";
-import { createContext } from "./trpc";
+import { appRouter } from "./routers/index.js";
+import { createContext } from "./trpc.js";
 
 // Export the router type for use in frontend
-export type { AppRouter } from "./routers";
+export type { AppRouter } from "./routers/index.js";
 
 const fastify = Fastify({
   maxParamLength: 5000,
@@ -28,7 +28,7 @@ const start = async () => {
       trpcOptions: {
         router: appRouter,
         createContext,
-        onError: ({ path, error }) => {
+        onError: ({ path, error }: { path?: string; error: unknown }) => {
           console.error(`❌ tRPC failed on ${path ?? "<no-path>"}:`, error);
         },
       },
