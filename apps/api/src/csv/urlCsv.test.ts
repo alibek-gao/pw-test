@@ -2,10 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
-import {
-  parseUrlCsvContent,
-  validateUrlCsvHeaders,
-} from "./urlCsv.js";
+import { parseUrlCsvContent, validateUrlCsvHeaders } from "./urlCsv.js";
 
 const urlsCsvPath = resolve(process.cwd(), "../../urls.csv");
 
@@ -55,7 +52,10 @@ test("parseUrlCsvContent returns row errors for invalid row values", () => {
   assert.equal(parsed.errors.length, 1);
   assert.equal(parsed.errors[0]?.rowNumber, 2);
   assert.match(parsed.errors[0]?.message ?? "", /url must be a valid/);
-  assert.match(parsed.errors[0]?.message ?? "", /citations_count must be an integer/);
+  assert.match(
+    parsed.errors[0]?.message ?? "",
+    /citations_count must be an integer/,
+  );
 });
 
 test("parseUrlCsvContent handles quoted commas", () => {

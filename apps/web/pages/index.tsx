@@ -1,6 +1,16 @@
+import { FormEvent, useState } from "react";
+import { apiUrl } from "../utils/api";
 import { trpc } from "../utils/trpc";
 
 const formatBytes = (bytes: number) => {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
   const megabytes = bytes / (1024 * 1024);
 
   if (Number.isInteger(megabytes)) {
@@ -19,6 +29,11 @@ const formatDate = (value: string | null) => {
 };
 
 export default function Home() {
+  const utils = trpc.useContext();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const {
     data: csvConfig,
     error: csvConfigError,
@@ -41,9 +56,109 @@ export default function Home() {
       sortDirection: "desc",
     });
 
+  const refreshDashboard = async () => {
+    await Promise.all([
+      utils.csv.listJobs.invalidate(),
+      utils.csv.summary.invalidate(),
+      utils.csv.domainCounts.invalidate(),
+      utils.csv.lastUpdatedSeries.invalidate(),
+      utils.csv.listRecords.invalidate(),
+    ]);
+  };
+
+  const uploadCsv = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setUploadStatus(null);
+    setUploadError(null);
+
+    if (!selectedFile) {
+      setUploadError("Choose a CSV file first.");
+      return;
+    }
+
+    if (!selectedFile.name.toLowerCase().endsWith(".csv")) {
+      setUploadError("Only CSV files are supported.");
+      return;
+    }
+
+    if (
+      csvConfig?.maxCsvUploadBytes &&
+      selectedFile.size > csvConfig.maxCsvUploadBytes
+    ) {
+      setUploadError(
+        `File is too large. Maximum size is ${formatBytes(
+          csvConfig.maxCsvUploadBytes,
+        )}.`,
+      );
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    setIsUploading(true);
+
+    try {
+      const response = await fetch(`${apiUrl}/uploads/csv`, {
+        method: "POST",
+        body: formData,
+      });
+      const result = (await response.json()) as {
+        jobId?: string;
+        status?: string;
+        processedRows?: number;
+        failedRows?: number;
+        message?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.message ?? "CSV upload failed.");
+      }
+
+      setUploadStatus(
+        `Imported ${result.processedRows ?? 0} rows with ${
+          result.failedRows ?? 0
+        } errors.`,
+      );
+      setSelectedFile(null);
+      await refreshDashboard();
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "CSV upload failed.",
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <main>
       <h1>CSV Upload</h1>
+
+      <section>
+        <h2>Upload CSV</h2>
+        <form onSubmit={uploadCsv}>
+          <input
+            accept=".csv,text/csv"
+            disabled={isUploading}
+            onChange={(event) => {
+              setSelectedFile(event.target.files?.[0] ?? null);
+              setUploadStatus(null);
+              setUploadError(null);
+            }}
+            type="file"
+          />
+          <button disabled={isUploading || !selectedFile} type="submit">
+            {isUploading ? "Uploading..." : "Upload"}
+          </button>
+        </form>
+        {selectedFile ? (
+          <p>
+            Selected: {selectedFile.name} ({formatBytes(selectedFile.size)})
+          </p>
+        ) : null}
+        {uploadStatus ? <p>{uploadStatus}</p> : null}
+        {uploadError ? <p>{uploadError}</p> : null}
+      </section>
 
       <section>
         <h2>Upload Settings</h2>

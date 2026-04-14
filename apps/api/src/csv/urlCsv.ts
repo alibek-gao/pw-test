@@ -171,11 +171,7 @@ export const parseUrlCsvRow = (
   const trafficEstimate = parseInteger(row, "traffic_estimate", errors);
   const domainAuthority = parseInteger(row, "domain_authority", errors);
   const mentionsCount = parseInteger(row, "mentions_count", errors);
-  const positionInResponse = parseInteger(
-    row,
-    "position_in_response",
-    errors,
-  );
+  const positionInResponse = parseInteger(row, "position_in_response", errors);
   const { hostname, rootDomain } = getUrlParts(url, errors);
   const lastUpdated = parseLastUpdated(lastUpdatedValue, errors);
 

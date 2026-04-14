@@ -1,6 +1,7 @@
 import { createTRPCNext } from "@trpc/next";
 import { httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@repo/api/src";
+import { apiUrl } from "./api";
 
 export const trpc = createTRPCNext<AppRouter>({
   config() {
@@ -11,7 +12,7 @@ export const trpc = createTRPCNext<AppRouter>({
            * If you want to use SSR, you need to use the server's full URL
            * @link https://trpc.io/docs/ssr
            **/
-          url: `http://localhost:4000/trpc`,
+          url: `${apiUrl}/trpc`,
         }),
       ],
       /**
