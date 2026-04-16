@@ -206,7 +206,10 @@ export default function Home() {
               <p className="text-[10px] font-semibold uppercase text-gray-500">
                 {label}
               </p>
-              <p className="mt-1 truncate text-lg font-semibold text-gray-900" title={isSummaryLoading ? "Loading..." : value}>
+              <p
+                className="mt-1 truncate text-lg font-semibold text-gray-900"
+                title={isSummaryLoading ? "Loading..." : value}
+              >
                 {isSummaryLoading ? "Loading..." : value}
               </p>
             </div>

@@ -1,10 +1,30 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { Readable } from "node:stream";
 import test from "node:test";
-import { parseUrlCsvContent, validateUrlCsvHeaders } from "./urlCsv.js";
+import {
+  parseUrlCsvContent,
+  parseUrlCsvStream,
+  validateUrlCsvHeaders,
+} from "./urlCsv.js";
 
 const urlsCsvPath = resolve(process.cwd(), "../../urls.csv");
+
+const collectParsedUrlCsvStream = async (content: string) => {
+  const records: ReturnType<typeof parseUrlCsvContent>["records"] = [];
+  const errors: ReturnType<typeof parseUrlCsvContent>["errors"] = [];
+  const result = await parseUrlCsvStream(Readable.from([content]), {
+    onRecord: (record) => {
+      records.push(record);
+    },
+    onError: (error) => {
+      errors.push(error);
+    },
+  });
+
+  return { records, errors, result };
+};
 
 test("parseUrlCsvContent parses the provided urls.csv", () => {
   const parsed = parseUrlCsvContent(readFileSync(urlsCsvPath, "utf8"));
@@ -69,4 +89,42 @@ test("parseUrlCsvContent handles quoted commas", () => {
   assert.equal(parsed.records.length, 1);
   assert.equal(parsed.records[0]?.title, "Title, with comma");
   assert.equal(parsed.records[0]?.rootDomain, "example.com");
+});
+
+test("parseUrlCsvStream parses the provided urls.csv", async () => {
+  const parsed = await collectParsedUrlCsvStream(
+    readFileSync(urlsCsvPath, "utf8"),
+  );
+
+  assert.equal(parsed.records.length, 111);
+  assert.equal(parsed.errors.length, 0);
+  assert.equal(parsed.result.processedRows, 111);
+  assert.equal(parsed.result.failedRows, 0);
+  assert.equal(parsed.result.abortedAfterHeaderError, false);
+  assert.equal(parsed.records[0]?.rootDomain, "hubspot.com");
+});
+
+test("parseUrlCsvStream aborts after invalid headers", async () => {
+  const stream = Readable.from([
+    "url,title\nhttps://example.com,Example\nhttps://example.org,Example\n",
+  ]);
+  const records: ReturnType<typeof parseUrlCsvContent>["records"] = [];
+  const errors: ReturnType<typeof parseUrlCsvContent>["errors"] = [];
+  const result = await parseUrlCsvStream(stream, {
+    onRecord: (record) => {
+      records.push(record);
+    },
+    onError: (error) => {
+      errors.push(error);
+    },
+  });
+
+  assert.equal(records.length, 0);
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0]?.rowNumber, 1);
+  assert.match(errors[0]?.message ?? "", /Expected 15 columns/);
+  assert.equal(result.processedRows, 0);
+  assert.equal(result.failedRows, 1);
+  assert.equal(result.abortedAfterHeaderError, true);
+  assert.equal(stream.destroyed, true);
 });

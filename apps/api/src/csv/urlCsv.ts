@@ -1,4 +1,6 @@
-import { parse } from "csv-parse/sync";
+import type { Readable } from "node:stream";
+import { parse as parseStream } from "csv-parse";
+import { parse as parseSync } from "csv-parse/sync";
 import { getDomain, getHostname } from "tldts";
 import { expectedUrlCsvHeaders } from "../config.js";
 
@@ -35,6 +37,20 @@ export type UrlCsvRowError = {
 export type ParsedUrlCsv = {
   records: ParsedUrlCsvRecord[];
   errors: UrlCsvRowError[];
+};
+
+export type ParseUrlCsvStreamHandlers = {
+  // eslint-disable-next-line no-unused-vars
+  onRecord: (record: ParsedUrlCsvRecord) => Promise<void> | void;
+  // eslint-disable-next-line no-unused-vars
+  onError: (error: UrlCsvRowError) => Promise<void> | void;
+};
+
+export type ParseUrlCsvStreamResult = {
+  totalRows: number;
+  processedRows: number;
+  failedRows: number;
+  abortedAfterHeaderError: boolean;
 };
 
 const numberFields = [
@@ -209,7 +225,7 @@ export const parseUrlCsvRow = (
 };
 
 export const parseUrlCsvContent = (content: string): ParsedUrlCsv => {
-  const rows = parse(content, {
+  const rows = parseSync(content, {
     bom: true,
     relaxColumnCount: true,
     skipEmptyLines: true,
@@ -261,4 +277,83 @@ export const parseUrlCsvContent = (content: string): ParsedUrlCsv => {
     },
     { records: [], errors: [] },
   );
+};
+
+export const parseUrlCsvStream = async (
+  input: Readable,
+  handlers: ParseUrlCsvStreamHandlers,
+): Promise<ParseUrlCsvStreamResult> => {
+  const parser = input.pipe(
+    parseStream({
+      bom: true,
+      relaxColumnCount: true,
+      skipEmptyLines: true,
+      trim: true,
+    }),
+  );
+  let rowNumber = 0;
+  let processedRows = 0;
+  let failedRows = 0;
+
+  for await (const row of parser as AsyncIterable<string[]>) {
+    rowNumber += 1;
+
+    if (rowNumber === 1) {
+      const headerErrors = validateUrlCsvHeaders(row);
+
+      if (headerErrors.length > 0) {
+        await handlers.onError({
+          rowNumber,
+          message: headerErrors.join(" "),
+          rawRow: row,
+        });
+        failedRows += 1;
+        input.unpipe(parser);
+        input.destroy();
+        parser.destroy();
+
+        return {
+          totalRows: failedRows,
+          processedRows,
+          failedRows,
+          abortedAfterHeaderError: true,
+        };
+      }
+
+      continue;
+    }
+
+    const rawRow = Object.fromEntries(
+      expectedUrlCsvHeaders.map((header, headerIndex) => [
+        header,
+        row[headerIndex] ?? "",
+      ]),
+    ) as RawUrlCsvRow;
+    const parsed = parseUrlCsvRow(rawRow, rowNumber);
+
+    if (parsed.record) {
+      await handlers.onRecord(parsed.record);
+      processedRows += 1;
+    }
+
+    if (parsed.error) {
+      await handlers.onError(parsed.error);
+      failedRows += 1;
+    }
+  }
+
+  if (rowNumber === 0) {
+    await handlers.onError({
+      rowNumber: 1,
+      message: "CSV file is empty.",
+    });
+    failedRows += 1;
+  }
+
+  return {
+    totalRows: processedRows + failedRows,
+    processedRows,
+    failedRows,
+    abortedAfterHeaderError: false,
+  };
 };
