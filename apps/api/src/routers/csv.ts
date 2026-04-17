@@ -6,11 +6,15 @@ import {
   jobStatusInput,
   listJobsInput,
   listRecordsInput,
+  topByDomainInput,
 } from "../schemas/csv.js";
 import {
   getDomainCounts,
   getLastUpdatedSeries,
+  getRootDomains,
   getSummary,
+  getTopModelsByDomain,
+  getTopPagesByDomain,
   listRecords,
 } from "../services/csvQueries.js";
 import {
@@ -48,6 +52,18 @@ export const csvRouter = router({
   lastUpdatedSeries: publicProcedure
     .input(jobScopedInput)
     .query(({ ctx, input }) => getLastUpdatedSeries(ctx.prisma, input?.jobId)),
+
+  rootDomains: publicProcedure
+    .input(jobScopedInput)
+    .query(({ ctx, input }) => getRootDomains(ctx.prisma, input?.jobId)),
+
+  topPagesByDomain: publicProcedure
+    .input(topByDomainInput)
+    .query(({ ctx, input }) => getTopPagesByDomain(ctx.prisma, input)),
+
+  topModelsByDomain: publicProcedure
+    .input(topByDomainInput)
+    .query(({ ctx, input }) => getTopModelsByDomain(ctx.prisma, input)),
 
   importErrors: publicProcedure
     .input(importErrorsInput)

@@ -56,7 +56,15 @@ export const importErrorsInput = z.object({
   pageSize: z.number().int().min(1).max(100).default(25),
 });
 
+export const topByDomainInput = z.object({
+  rootDomain: z.string().min(1),
+  metric: z.enum(["citationsCount", "mentionsCount"]),
+  jobId: z.string().min(1).optional(),
+  limit: z.number().int().min(1).max(50).default(10),
+});
+
 export type ListJobsInput = z.infer<typeof listJobsInput>;
 export type ListRecordsInput = z.infer<typeof listRecordsInput>;
 export type DomainCountsInput = z.infer<typeof domainCountsInput>;
 export type ImportErrorsInput = z.infer<typeof importErrorsInput>;
+export type TopByDomainInput = z.infer<typeof topByDomainInput>;

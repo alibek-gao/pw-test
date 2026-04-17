@@ -14,8 +14,7 @@ const formatBytes = (bytes: number) => {
 
 export const CsvUploader = () => {
   const utils = trpc.useUtils();
-  const { data: csvConfig, error: csvConfigError } =
-    trpc.csv.config.useQuery();
+  const { data: csvConfig, error: csvConfigError } = trpc.csv.config.useQuery();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
@@ -29,6 +28,9 @@ export const CsvUploader = () => {
       utils.csv.domainCounts.invalidate(),
       utils.csv.lastUpdatedSeries.invalidate(),
       utils.csv.listRecords.invalidate(),
+      utils.csv.rootDomains.invalidate(),
+      utils.csv.topPagesByDomain.invalidate(),
+      utils.csv.topModelsByDomain.invalidate(),
     ]);
 
   const uploadCsv = async (event: FormEvent<HTMLFormElement>) => {
