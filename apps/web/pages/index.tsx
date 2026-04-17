@@ -2,17 +2,8 @@ import { CsvUploader } from "../components/CsvUploader";
 import { DomainBreakdown } from "../components/DomainBreakdown";
 import { DomainCountsChart } from "../components/DomainCountsChart";
 import { LastUpdatedSeriesChart } from "../components/LastUpdatedSeriesChart";
+import { RecordsTable } from "../components/RecordsTable";
 import { trpc } from "../utils/trpc";
-
-const formatBytes = (bytes: number) => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-
-  const megabytes = bytes / (1024 * 1024);
-  return Number.isInteger(megabytes)
-    ? `${megabytes} MB`
-    : `${megabytes.toFixed(1)} MB`;
-};
 
 const formatDate = (value: string | null | Date) => {
   if (!value) return "No data";
@@ -31,19 +22,11 @@ const statusClassName = (status: string) => {
 };
 
 export default function Home() {
-  const { data: csvConfig } = trpc.csv.config.useQuery();
   const { data: jobs, isLoading: areJobsLoading } = trpc.csv.listJobs.useQuery({
     limit: 5,
   });
   const { data: summary, isLoading: isSummaryLoading } =
     trpc.csv.summary.useQuery();
-  const { data: records, isLoading: areRecordsLoading } =
-    trpc.csv.listRecords.useQuery({
-      page: 1,
-      pageSize: 10,
-      sortBy: "createdAt",
-      sortDirection: "desc",
-    });
   const { data: domainCounts, isLoading: areDomainCountsLoading } =
     trpc.csv.domainCounts.useQuery({ limit: 10 });
   const { data: lastUpdatedSeries, isLoading: isLastUpdatedSeriesLoading } =
@@ -171,117 +154,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
-            <div className="flex items-center justify-between border-b border-stone-200 px-3 py-2">
-              <h2 className="text-[10px] font-semibold uppercase text-gray-600">
-                Sources
-              </h2>
-              <p className="text-[10px] text-gray-500">
-                Max upload{" "}
-                {csvConfig ? formatBytes(csvConfig.maxCsvUploadBytes) : "..."}
-              </p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="w-70 px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
-                      URL
-                    </th>
-                    <th className="px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
-                      AI Model
-                    </th>
-                    <th className="px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
-                      Sentiment
-                    </th>
-                    <th className="px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
-                      Visibility
-                    </th>
-                    <th className="px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
-                      Citations
-                    </th>
-                    <th className="px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
-                      Position
-                    </th>
-                    <th className="px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
-                      Updated
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {areRecordsLoading ? (
-                    <tr>
-                      <td
-                        className="px-2 py-3 text-xs text-gray-500"
-                        colSpan={7}
-                      >
-                        Loading records...
-                      </td>
-                    </tr>
-                  ) : null}
-                  {!areRecordsLoading && !records?.records.length ? (
-                    <tr>
-                      <td
-                        className="px-2 py-3 text-xs text-gray-500"
-                        colSpan={7}
-                      >
-                        Upload a CSV to populate source rows.
-                      </td>
-                    </tr>
-                  ) : null}
-                  {records?.records.map((record) => (
-                    <tr className="hover:bg-gray-50" key={record.id}>
-                      <td className="w-70 max-w-70 px-2 py-1.5">
-                        <div className="flex items-center gap-2">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            alt=""
-                            className="h-5 w-5 rounded-sm border border-gray-200"
-                            src={`https://www.google.com/s2/favicons?domain=${record.rootDomain}&sz=32`}
-                          />
-                          <div className="min-w-0">
-                            <a
-                              className="block truncate text-xs text-blue-600 hover:underline"
-                              href={record.url}
-                              rel="noreferrer"
-                              target="_blank"
-                            >
-                              {record.title}
-                            </a>
-                            <p className="truncate text-[10px] text-gray-500">
-                              {record.rootDomain}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-1.5">
-                        <span className="rounded-full bg-indigo-100/70 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                          {record.aiModelMentioned}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-1.5">
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
-                          {record.sentiment}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-1.5 text-xs text-gray-700">
-                        {record.visibilityScore}
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-1.5 text-xs text-gray-700">
-                        {formatNumber(record.citationsCount)}
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-1.5 font-mono text-xs text-gray-700">
-                        #{record.positionInResponse}
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-1.5 text-xs text-gray-700">
-                        {formatDate(record.lastUpdated)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <RecordsTable />
         </section>
       </div>
     </main>
