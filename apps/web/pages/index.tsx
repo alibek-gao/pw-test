@@ -1,4 +1,6 @@
 import { FormEvent, useState } from "react";
+import { DomainCountsChart } from "../components/DomainCountsChart";
+import { LastUpdatedSeriesChart } from "../components/LastUpdatedSeriesChart";
 import { apiUrl } from "../utils/api";
 import { trpc } from "../utils/trpc";
 
@@ -48,6 +50,10 @@ export default function Home() {
       sortBy: "createdAt",
       sortDirection: "desc",
     });
+  const { data: domainCounts, isLoading: areDomainCountsLoading } =
+    trpc.csv.domainCounts.useQuery({ limit: 10 });
+  const { data: lastUpdatedSeries, isLoading: isLastUpdatedSeriesLoading } =
+    trpc.csv.lastUpdatedSeries.useQuery();
 
   const refreshDashboard = async () => {
     await Promise.all([
@@ -214,6 +220,31 @@ export default function Home() {
               </p>
             </div>
           ))}
+        </section>
+
+        <section className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-lg border border-stone-200 bg-white">
+            <div className="border-b border-stone-200 px-3 py-2">
+              <h2 className="text-[10px] font-semibold uppercase text-gray-600">
+                Records per day
+              </h2>
+            </div>
+            <LastUpdatedSeriesChart
+              data={lastUpdatedSeries}
+              isLoading={isLastUpdatedSeriesLoading}
+            />
+          </div>
+          <div className="rounded-lg border border-stone-200 bg-white">
+            <div className="border-b border-stone-200 px-3 py-2">
+              <h2 className="text-[10px] font-semibold uppercase text-gray-600">
+                Top domains
+              </h2>
+            </div>
+            <DomainCountsChart
+              data={domainCounts}
+              isLoading={areDomainCountsLoading}
+            />
+          </div>
         </section>
 
         <section className="grid gap-3 lg:grid-cols-[320px_1fr]">
