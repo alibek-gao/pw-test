@@ -188,6 +188,7 @@ All of the above pass in the current local state.
 - Import errors are stored but not exposed in the UI.
 - The records table filter controls (domain, AI model, sentiment, region) are supported by the API but not yet surfaced in the UI.
 - CSV validation should enforce stricter numeric ranges and real calendar dates.
+- Upload is synchronous: the HTTP request stays open until the import finishes. Sufficient for assignment-sized files, but production-scale imports should split accept-from-import (see Recommended Next Work).
 - The current streaming importer is sufficient for this assignment, but production-scale imports could still add resumability and background cleanup for process-level crashes.
 - Root README still contains some starter inconsistencies, such as references to `domains.csv` and `prisma/schema/main.prisma`.
 - `apps/web/README.md` is currently empty from an existing worktree change.
@@ -200,3 +201,6 @@ All of the above pass in the current local state.
 3. Surface the existing filter controls on the records table.
 4. Tighten parser validation and add tests for the new edge cases.
 5. Clean up README inaccuracies and remove unused starter code if the final submission should be focused.
+6. Make upload async: persist the `ImportJob` as `PENDING`, return `{ jobId }` immediately, and run `importUrlCsvStream` as a fire-and-forget task (`void importRows(jobId)`); the client polls `jobStatus` and invalidates reads on terminal status. A durable queue (BullMQ/Redis) would be the next step beyond that.
+7. Real-time upload progress in two layers: (a) bytes uploaded via `XMLHttpRequest` `upload.onprogress` on the client (native `fetch` still lacks upload progress in most browsers); (b) rows processed via `processedRows`/`totalRows` counters on `ImportJob`, updated in batches by the importer and surfaced by polling `jobStatus`. SSE or WebSocket would be a nicer transport than polling at scale.
+8. Data export: add a plain Fastify route `GET /exports/records.csv` that accepts the same filters as `listRecords`, streams rows from Prisma in chunks through `csv-stringify`, and sets `Content-Disposition: attachment`. Kept off tRPC for the same reason as upload — binary/large responses belong on a streaming HTTP route.

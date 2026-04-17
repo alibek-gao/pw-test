@@ -31,6 +31,7 @@ export const CsvUploader = () => {
       utils.csv.rootDomains.invalidate(),
       utils.csv.topPagesByDomain.invalidate(),
       utils.csv.topModelsByDomain.invalidate(),
+      utils.csv.aiModels.invalidate(),
     ]);
 
   const uploadCsv = async (event: FormEvent<HTMLFormElement>) => {
