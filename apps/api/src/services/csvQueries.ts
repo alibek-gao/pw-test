@@ -237,6 +237,18 @@ export const getRootDomains = (prisma: PrismaClient, jobId?: string) =>
       rows.map((row) => row.rootDomain),
     );
 
+export const getAiModels = (prisma: PrismaClient, jobId?: string) =>
+  prisma.urlRecord
+    .findMany({
+      where: getVisibleRecordsWhere(jobId),
+      distinct: ["aiModelMentioned"],
+      select: { aiModelMentioned: true },
+      orderBy: { aiModelMentioned: "asc" },
+    })
+    .then((rows: { aiModelMentioned: string }[]) =>
+      rows.map((row) => row.aiModelMentioned),
+    );
+
 export const getTopPagesByDomain = (
   prisma: PrismaClient,
   input: TopByDomainInput,

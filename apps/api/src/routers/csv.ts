@@ -9,6 +9,7 @@ import {
   topByDomainInput,
 } from "../schemas/csv.js";
 import {
+  getAiModels,
   getDomainCounts,
   getLastUpdatedSeries,
   getRootDomains,
@@ -56,6 +57,10 @@ export const csvRouter = router({
   rootDomains: publicProcedure
     .input(jobScopedInput)
     .query(({ ctx, input }) => getRootDomains(ctx.prisma, input?.jobId)),
+
+  aiModels: publicProcedure
+    .input(jobScopedInput)
+    .query(({ ctx, input }) => getAiModels(ctx.prisma, input?.jobId)),
 
   topPagesByDomain: publicProcedure
     .input(topByDomainInput)

@@ -155,6 +155,8 @@ export const RecordsTable = () => {
   const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState<SortBy>("createdAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [rootDomainFilter, setRootDomainFilter] = useState("");
+  const [modelFilter, setModelFilter] = useState("");
   const [visible, setVisible] =
     useState<Record<ColumnKey, boolean>>(defaultVisible);
 
@@ -165,7 +167,20 @@ export const RecordsTable = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, pageSize, sortBy, sortDirection]);
+  }, [
+    debouncedSearch,
+    pageSize,
+    sortBy,
+    sortDirection,
+    rootDomainFilter,
+    modelFilter,
+  ]);
+
+  const filters = {
+    ...(rootDomainFilter ? { rootDomain: rootDomainFilter } : {}),
+    ...(modelFilter ? { aiModelMentioned: modelFilter } : {}),
+  };
+  const hasFilters = Object.keys(filters).length > 0;
 
   const { data, isFetching, isLoading } = trpc.csv.listRecords.useQuery(
     {
@@ -174,9 +189,13 @@ export const RecordsTable = () => {
       sortBy,
       sortDirection,
       ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      ...(hasFilters ? { filters } : {}),
     },
     { keepPreviousData: true },
   );
+
+  const { data: rootDomainOptions } = trpc.csv.rootDomains.useQuery();
+  const { data: modelOptions } = trpc.csv.aiModels.useQuery();
 
   const records = (data?.records ?? []) as TableRow[];
   const totalCount = data?.totalCount ?? 0;
@@ -222,6 +241,30 @@ export const RecordsTable = () => {
             type="search"
             value={search}
           />
+          <select
+            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-xs text-gray-700"
+            onChange={(event) => setRootDomainFilter(event.target.value)}
+            value={rootDomainFilter}
+          >
+            <option value="">All domains</option>
+            {(rootDomainOptions ?? []).map((domain) => (
+              <option key={domain} value={domain}>
+                {domain}
+              </option>
+            ))}
+          </select>
+          <select
+            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-xs text-gray-700"
+            onChange={(event) => setModelFilter(event.target.value)}
+            value={modelFilter}
+          >
+            <option value="">All models</option>
+            {(modelOptions ?? []).map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
+          </select>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md border border-stone-200 bg-white px-2 py-1 text-xs text-gray-700">
               Columns
@@ -299,8 +342,8 @@ export const RecordsTable = () => {
                   className="px-2 py-3 text-xs text-gray-500"
                   colSpan={activeColumns.length}
                 >
-                  {debouncedSearch
-                    ? "No records match your search."
+                  {debouncedSearch || hasFilters
+                    ? "No records match your filters."
                     : "Upload a CSV to populate source rows."}
                 </td>
               </tr>
