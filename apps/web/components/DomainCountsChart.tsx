@@ -19,7 +19,9 @@ export const DomainCountsChart = ({
   data,
   isLoading,
 }: DomainCountsChartProps) => {
-  if (isLoading) {
+  const hasResolvedData = data !== undefined;
+
+  if (isLoading && !hasResolvedData) {
     return (
       <p className="px-3 py-8 text-center text-xs text-gray-500">
         Loading domains...

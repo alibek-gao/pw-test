@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DelayedLoadingText } from "./DelayedLoadingText";
 import { trpc } from "../utils/trpc";
 import { RankedBarChart } from "./RankedBarChart";
 
@@ -21,32 +22,41 @@ const urlPath = (url: string) => {
 };
 
 export const DomainBreakdown = () => {
-  const { data: rootDomains, isLoading: areRootDomainsLoading } =
-    trpc.csv.rootDomains.useQuery();
+  const {
+    data: rootDomains,
+    isFetching: areRootDomainsFetching,
+    isLoading: areRootDomainsLoading,
+  } = trpc.csv.rootDomains.useQuery();
 
   const [chosenDomain, setChosenDomain] = useState<string | null>(null);
   const [metric, setMetric] = useState<Metric>("citationsCount");
 
   const effectiveDomain = chosenDomain ?? rootDomains?.[0] ?? null;
 
-  const { data: topPages, isLoading: arePagesLoading } =
-    trpc.csv.topPagesByDomain.useQuery(
-      {
-        rootDomain: effectiveDomain ?? "",
-        metric,
-        limit: 10,
-      },
-      { enabled: Boolean(effectiveDomain) },
-    );
-  const { data: topModels, isLoading: areModelsLoading } =
-    trpc.csv.topModelsByDomain.useQuery(
-      {
-        rootDomain: effectiveDomain ?? "",
-        metric,
-        limit: 10,
-      },
-      { enabled: Boolean(effectiveDomain) },
-    );
+  const {
+    data: topPages,
+    isFetching: arePagesFetching,
+    isLoading: arePagesLoading,
+  } = trpc.csv.topPagesByDomain.useQuery(
+    {
+      rootDomain: effectiveDomain ?? "",
+      metric,
+      limit: 10,
+    },
+    { enabled: Boolean(effectiveDomain), keepPreviousData: true },
+  );
+  const {
+    data: topModels,
+    isFetching: areModelsFetching,
+    isLoading: areModelsLoading,
+  } = trpc.csv.topModelsByDomain.useQuery(
+    {
+      rootDomain: effectiveDomain ?? "",
+      metric,
+      limit: 10,
+    },
+    { enabled: Boolean(effectiveDomain), keepPreviousData: true },
+  );
 
   const pagesData = topPages?.map((page) => ({
     label: truncate(urlPath(page.url)),
@@ -56,12 +66,19 @@ export const DomainBreakdown = () => {
     label: model.model,
     value: model.value,
   }));
+  const hasRootDomainsData = rootDomains !== undefined;
+  const hasPagesData = topPages !== undefined;
+  const hasModelsData = topModels !== undefined;
 
   return (
     <section className="rounded-lg border border-stone-200 bg-white">
       <div className="flex flex-col gap-2 border-b border-stone-200 px-3 py-2 md:flex-row md:items-center md:justify-between">
         <h2 className="text-[10px] font-semibold uppercase text-gray-600">
           Domain breakdown
+          <DelayedLoadingText
+            hasData={hasRootDomainsData}
+            isLoading={areRootDomainsFetching}
+          />
         </h2>
 
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
@@ -108,6 +125,10 @@ export const DomainBreakdown = () => {
           <div className="border-b border-stone-200 px-3 py-2">
             <h3 className="text-[10px] font-semibold uppercase text-gray-600">
               Top pages
+              <DelayedLoadingText
+                hasData={hasPagesData}
+                isLoading={arePagesFetching}
+              />
             </h3>
           </div>
           <RankedBarChart
@@ -123,6 +144,10 @@ export const DomainBreakdown = () => {
           <div className="border-b border-stone-200 px-3 py-2">
             <h3 className="text-[10px] font-semibold uppercase text-gray-600">
               Top models
+              <DelayedLoadingText
+                hasData={hasModelsData}
+                isLoading={areModelsFetching}
+              />
             </h3>
           </div>
           <RankedBarChart

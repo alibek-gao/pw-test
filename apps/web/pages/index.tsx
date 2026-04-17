@@ -1,4 +1,5 @@
 import { CsvUploader } from "../components/CsvUploader";
+import { DelayedLoadingText } from "../components/DelayedLoadingText";
 import { DomainBreakdown } from "../components/DomainBreakdown";
 import { DomainCountsChart } from "../components/DomainCountsChart";
 import { LastUpdatedSeriesChart } from "../components/LastUpdatedSeriesChart";
@@ -22,15 +23,30 @@ const statusClassName = (status: string) => {
 };
 
 export default function Home() {
-  const { data: jobs, isLoading: areJobsLoading } = trpc.csv.listJobs.useQuery({
-    limit: 5,
-  });
-  const { data: summary, isLoading: isSummaryLoading } =
-    trpc.csv.summary.useQuery();
-  const { data: domainCounts, isLoading: areDomainCountsLoading } =
-    trpc.csv.domainCounts.useQuery({ limit: 10 });
-  const { data: lastUpdatedSeries, isLoading: isLastUpdatedSeriesLoading } =
-    trpc.csv.lastUpdatedSeries.useQuery();
+  const {
+    data: jobs,
+    isFetching: areJobsFetching,
+    isLoading: areJobsLoading,
+  } = trpc.csv.listJobs.useQuery({ limit: 5 });
+  const {
+    data: summary,
+    isFetching: isSummaryFetching,
+    isLoading: isSummaryLoading,
+  } = trpc.csv.summary.useQuery();
+  const {
+    data: domainCounts,
+    isFetching: areDomainCountsFetching,
+    isLoading: areDomainCountsLoading,
+  } = trpc.csv.domainCounts.useQuery({ limit: 10 });
+  const {
+    data: lastUpdatedSeries,
+    isFetching: isLastUpdatedSeriesFetching,
+    isLoading: isLastUpdatedSeriesLoading,
+  } = trpc.csv.lastUpdatedSeries.useQuery();
+  const hasJobsData = jobs !== undefined;
+  const hasSummaryData = summary !== undefined;
+  const hasDomainCountsData = domainCounts !== undefined;
+  const hasLastUpdatedSeriesData = lastUpdatedSeries !== undefined;
 
   const metrics = [
     ["Records", formatNumber(summary?.totalRecords)],
@@ -76,12 +92,18 @@ export default function Home() {
             >
               <p className="text-[10px] font-semibold uppercase text-gray-500">
                 {label}
+                <DelayedLoadingText
+                  hasData={hasSummaryData}
+                  isLoading={isSummaryFetching}
+                />
               </p>
               <p
                 className="mt-1 truncate text-lg font-semibold text-gray-900"
-                title={isSummaryLoading ? "Loading..." : value}
+                title={
+                  isSummaryLoading && !hasSummaryData ? "Loading..." : value
+                }
               >
-                {isSummaryLoading ? "Loading..." : value}
+                {isSummaryLoading && !hasSummaryData ? "Loading..." : value}
               </p>
             </div>
           ))}
@@ -92,6 +114,10 @@ export default function Home() {
             <div className="border-b border-stone-200 px-3 py-2">
               <h2 className="text-[10px] font-semibold uppercase text-gray-600">
                 Records per day
+                <DelayedLoadingText
+                  hasData={hasLastUpdatedSeriesData}
+                  isLoading={isLastUpdatedSeriesFetching}
+                />
               </h2>
             </div>
             <LastUpdatedSeriesChart
@@ -103,6 +129,10 @@ export default function Home() {
             <div className="border-b border-stone-200 px-3 py-2">
               <h2 className="text-[10px] font-semibold uppercase text-gray-600">
                 Top domains
+                <DelayedLoadingText
+                  hasData={hasDomainCountsData}
+                  isLoading={areDomainCountsFetching}
+                />
               </h2>
             </div>
             <DomainCountsChart
@@ -119,15 +149,19 @@ export default function Home() {
             <div className="border-b border-stone-200 px-3 py-2">
               <h2 className="text-[10px] font-semibold uppercase text-gray-600">
                 Recent Imports
+                <DelayedLoadingText
+                  hasData={hasJobsData}
+                  isLoading={areJobsFetching}
+                />
               </h2>
             </div>
             <div className="divide-y divide-stone-100">
-              {areJobsLoading ? (
+              {areJobsLoading && !hasJobsData ? (
                 <p className="px-3 py-3 text-xs text-gray-500">
                   Loading imports...
                 </p>
               ) : null}
-              {!areJobsLoading && !jobs?.length ? (
+              {(!areJobsLoading || hasJobsData) && !jobs?.length ? (
                 <p className="px-3 py-3 text-xs text-gray-500">
                   No CSV imports yet.
                 </p>

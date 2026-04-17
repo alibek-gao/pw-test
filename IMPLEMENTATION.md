@@ -34,7 +34,7 @@ The parser:
 - Supports BOMs, trimmed values, quoted commas, and skipped empty lines.
 - Validates that the header row exactly matches the expected `urls.csv` schema.
 - Validates headers as soon as the first parsed row is available.
-- Aborts the upload stream immediately when headers are invalid.
+- Stops the streaming upload parser immediately when headers are invalid.
 - Requires all text fields needed by the dashboard.
 - Parses numeric fields as integers.
 - Validates `last_updated` as `YYYY-MM-DD`.
@@ -43,6 +43,8 @@ The parser:
 - Returns valid records and invalid rows separately.
 
 This split lets an import partially succeed. Good rows are saved, bad rows are preserved as `ImportError` records, and the job status becomes `COMPLETED_WITH_ERRORS`.
+
+Invalid headers are handled as an import validation error rather than a fatal failed import. For streaming uploads, the parser records the header error against row 1, stops consuming the rest of the file, and returns stats with `abortedAfterHeaderError: true`; the importer then completes the job as `COMPLETED_WITH_ERRORS`.
 
 There are two parser entry points:
 
@@ -115,22 +117,26 @@ Instead, the current strategy is:
 3. Persist records and row errors in bounded batches.
 4. Keep `PROCESSING` imports hidden from dashboard reads.
 5. On success, mark the job `COMPLETED` or `COMPLETED_WITH_ERRORS`.
-6. On parse errors, database errors, stream errors, or client cancellation, run cleanup in a database transaction:
+6. On thrown parser errors, database errors, stream errors, or client cancellation, run cleanup in a database transaction:
    - delete records for that import job
    - delete row errors for that import job
    - mark the import job `FAILED`
    - store the failure message
 
-This gives atomic failure cleanup without the operational cost of wrapping the entire upload in a single transaction. It still does not provide resumability; cancelled or failed uploads must be retried from the beginning.
+CSV validation errors, including invalid headers and invalid row values, are not treated as cleanup-triggering failures. They are persisted as `ImportError` records and reflected in the job's failed row counts.
+
+This gives atomic cleanup for fatal failures without the operational cost of wrapping the entire upload in a single transaction. It still does not provide resumability; cancelled or failed uploads must be retried from the beginning.
 
 ## Frontend Dashboard
 
 The dashboard is composed of focused components under `apps/web/components`:
 
 - `CsvUploader` owns the upload form, client-side validation, progress state, and tRPC cache invalidation on success.
+- `DelayedLoadingText` is a small shared indicator for background refreshes. It waits briefly before rendering subtle `Loading...` text inside chart, table, or list headings. This is intentionally a lightweight placeholder for the test assignment; a production UI would likely use a more complete fetching-state treatment.
 - `DomainCountsChart` and `LastUpdatedSeriesChart` render the two assignment-required charts.
 - `DomainBreakdown` wires a root domain selector and a citations/mentions toggle to two `RankedBarChart` instances for top pages and top models.
 - `RankedBarChart` is a reusable horizontal bar chart used by the domain breakdown.
+- `RecordsTable` renders paginated records and keeps previous page/search/sort data visible while the next query is fetching.
 
 The page itself currently includes:
 
@@ -142,6 +148,14 @@ The page itself currently includes:
 - Domain breakdown section: a native select with alphabetical root domains, a citations/mentions toggle, a top-pages chart, and a top-models chart.
 - Recent import jobs with status and row/error counts.
 - Paginated records table with external links and favicons based on each record's root domain.
+
+Loading states are split between initial loads and background refreshes:
+
+- On the first load, components still show their normal empty loading placeholder because there is no data to render yet.
+- After data has resolved at least once, charts, lists, summary cards, and the records table keep showing the existing data during refetches to avoid flicker.
+- A delayed `Loading...` label appears in the relevant heading only when a refetch is still in progress after a short pause.
+- Interactive queries that commonly refetch from user input, such as records pagination/sorting/search and domain breakdown metric/domain changes, use React Query `keepPreviousData` so the existing result remains visible until the replacement data arrives.
+- The records table footer uses the page and page size from the displayed response while previous data is being kept, so the range label matches the rows currently on screen rather than the request currently in flight.
 
 ## Testing and Verification
 

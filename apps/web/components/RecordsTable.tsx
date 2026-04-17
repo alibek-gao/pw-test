@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DelayedLoadingText } from "./DelayedLoadingText";
 import { trpc } from "../utils/trpc";
 
 type SortBy =
@@ -166,17 +167,23 @@ export const RecordsTable = () => {
     setPage(1);
   }, [debouncedSearch, pageSize, sortBy, sortDirection]);
 
-  const { data, isLoading } = trpc.csv.listRecords.useQuery({
-    page,
-    pageSize,
-    sortBy,
-    sortDirection,
-    ...(debouncedSearch ? { search: debouncedSearch } : {}),
-  });
+  const { data, isFetching, isLoading } = trpc.csv.listRecords.useQuery(
+    {
+      page,
+      pageSize,
+      sortBy,
+      sortDirection,
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    },
+    { keepPreviousData: true },
+  );
 
   const records = (data?.records ?? []) as TableRow[];
   const totalCount = data?.totalCount ?? 0;
   const pageCount = data?.pageCount ?? 0;
+  const displayedPage = data?.page ?? page;
+  const displayedPageSize = data?.pageSize ?? pageSize;
+  const hasResolvedData = data !== undefined;
 
   const toggleSort = (column: SortBy) => {
     if (sortBy === column) {
@@ -193,14 +200,19 @@ export const RecordsTable = () => {
 
   const activeColumns = columnDefs.filter((column) => visible[column.key]);
 
-  const rangeStart = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
-  const rangeEnd = Math.min(page * pageSize, totalCount);
+  const rangeStart =
+    totalCount === 0 ? 0 : (displayedPage - 1) * displayedPageSize + 1;
+  const rangeEnd = Math.min(displayedPage * displayedPageSize, totalCount);
 
   return (
     <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
       <div className="flex flex-col gap-2 border-b border-stone-200 px-3 py-2 md:flex-row md:items-center md:justify-between">
         <h2 className="text-[10px] font-semibold uppercase text-gray-600">
           Sources
+          <DelayedLoadingText
+            hasData={hasResolvedData}
+            isLoading={isFetching}
+          />
         </h2>
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <input
@@ -271,7 +283,7 @@ export const RecordsTable = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-            {isLoading ? (
+            {isLoading && !hasResolvedData ? (
               <tr>
                 <td
                   className="px-2 py-3 text-xs text-gray-500"
@@ -281,7 +293,7 @@ export const RecordsTable = () => {
                 </td>
               </tr>
             ) : null}
-            {!isLoading && !records.length ? (
+            {(!isLoading || hasResolvedData) && !records.length ? (
               <tr>
                 <td
                   className="px-2 py-3 text-xs text-gray-500"
@@ -340,7 +352,7 @@ export const RecordsTable = () => {
               Prev
             </button>
             <span className="text-[11px] text-gray-600">
-              {page} / {Math.max(pageCount, 1)}
+              {displayedPage} / {Math.max(pageCount, 1)}
             </span>
             <button
               className="rounded-md border border-stone-200 px-2 py-0.5 text-[11px] text-gray-700 disabled:cursor-not-allowed disabled:text-gray-300"

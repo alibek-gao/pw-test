@@ -25,7 +25,9 @@ export const RankedBarChart = ({
   valueLabel = "Value",
   labelWidth = 140,
 }: RankedBarChartProps) => {
-  if (isLoading) {
+  const hasResolvedData = data !== undefined;
+
+  if (isLoading && !hasResolvedData) {
     return (
       <p className="px-3 py-8 text-center text-xs text-gray-500">
         {loadingText}

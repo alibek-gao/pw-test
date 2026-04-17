@@ -26,7 +26,9 @@ export const LastUpdatedSeriesChart = ({
   data,
   isLoading,
 }: LastUpdatedSeriesChartProps) => {
-  if (isLoading) {
+  const hasResolvedData = data !== undefined;
+
+  if (isLoading && !hasResolvedData) {
     return (
       <p className="px-3 py-8 text-center text-xs text-gray-500">
         Loading timeline...
