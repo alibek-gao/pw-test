@@ -2,7 +2,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,7 +14,6 @@ type DomainCountsChartProps = {
 };
 
 const BAR_FILL = "#4f46e5";
-const BAR_FILL_HOVER = "#6366f1";
 
 export const DomainCountsChart = ({
   data,
@@ -75,14 +73,7 @@ export const DomainCountsChart = ({
             cursor={{ fill: "#f8fafc" }}
             formatter={(value) => [value as number, "Records"]}
           />
-          <Bar dataKey="count" radius={[0, 3, 3, 0]}>
-            {data.map((entry, index) => (
-              <Cell
-                fill={index === 0 ? BAR_FILL_HOVER : BAR_FILL}
-                key={entry.rootDomain}
-              />
-            ))}
-          </Bar>
+          <Bar dataKey="count" fill={BAR_FILL} radius={[0, 3, 3, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

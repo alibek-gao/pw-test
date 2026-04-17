@@ -1,7 +1,6 @@
-import { FormEvent, useState } from "react";
+import { CsvUploader } from "../components/CsvUploader";
 import { DomainCountsChart } from "../components/DomainCountsChart";
 import { LastUpdatedSeriesChart } from "../components/LastUpdatedSeriesChart";
-import { apiUrl } from "../utils/api";
 import { trpc } from "../utils/trpc";
 
 const formatBytes = (bytes: number) => {
@@ -31,13 +30,7 @@ const statusClassName = (status: string) => {
 };
 
 export default function Home() {
-  const utils = trpc.useContext();
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-
-  const { data: csvConfig, error: csvConfigError } = trpc.csv.config.useQuery();
+  const { data: csvConfig } = trpc.csv.config.useQuery();
   const { data: jobs, isLoading: areJobsLoading } = trpc.csv.listJobs.useQuery({
     limit: 5,
   });
@@ -54,78 +47,6 @@ export default function Home() {
     trpc.csv.domainCounts.useQuery({ limit: 10 });
   const { data: lastUpdatedSeries, isLoading: isLastUpdatedSeriesLoading } =
     trpc.csv.lastUpdatedSeries.useQuery();
-
-  const refreshDashboard = async () => {
-    await Promise.all([
-      utils.csv.listJobs.invalidate(),
-      utils.csv.summary.invalidate(),
-      utils.csv.domainCounts.invalidate(),
-      utils.csv.lastUpdatedSeries.invalidate(),
-      utils.csv.listRecords.invalidate(),
-    ]);
-  };
-
-  const uploadCsv = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setUploadStatus(null);
-    setUploadError(null);
-
-    if (!selectedFile) {
-      setUploadError("Choose a CSV file first.");
-      return;
-    }
-
-    if (!selectedFile.name.toLowerCase().endsWith(".csv")) {
-      setUploadError("Only CSV files are supported.");
-      return;
-    }
-
-    if (
-      csvConfig?.maxCsvUploadBytes &&
-      selectedFile.size > csvConfig.maxCsvUploadBytes
-    ) {
-      setUploadError(
-        `File is too large. Maximum size is ${formatBytes(
-          csvConfig.maxCsvUploadBytes,
-        )}.`,
-      );
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-    setIsUploading(true);
-
-    try {
-      const response = await fetch(`${apiUrl}/uploads/csv`, {
-        method: "POST",
-        body: formData,
-      });
-      const result = (await response.json()) as {
-        processedRows?: number;
-        failedRows?: number;
-        message?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(result.message ?? "CSV upload failed.");
-      }
-
-      setUploadStatus(
-        `Imported ${result.processedRows ?? 0} rows with ${
-          result.failedRows ?? 0
-        } errors.`,
-      );
-      setSelectedFile(null);
-      await refreshDashboard();
-    } catch (error) {
-      setUploadError(
-        error instanceof Error ? error.message : "CSV upload failed.",
-      );
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const metrics = [
     ["Records", formatNumber(summary?.totalRecords)],
@@ -160,48 +81,8 @@ export default function Home() {
               AI Visibility Dashboard
             </h1>
           </div>
-
-          <form
-            className="flex flex-col gap-2 md:flex-row"
-            onSubmit={uploadCsv}
-          >
-            <input
-              accept=".csv,text/csv"
-              className="max-w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-xs text-gray-700"
-              disabled={isUploading}
-              onChange={(event) => {
-                setSelectedFile(event.target.files?.[0] ?? null);
-                setUploadStatus(null);
-                setUploadError(null);
-              }}
-              type="file"
-            />
-            <button
-              className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-              disabled={isUploading || !selectedFile}
-              type="submit"
-            >
-              {isUploading ? "Uploading..." : "Upload CSV"}
-            </button>
-          </form>
+          <CsvUploader />
         </header>
-
-        {selectedFile || uploadStatus || uploadError || csvConfigError ? (
-          <section className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs text-gray-700">
-            {selectedFile ? (
-              <p>
-                Selected: {selectedFile.name} ({formatBytes(selectedFile.size)})
-              </p>
-            ) : null}
-            {uploadStatus ? (
-              <p className="text-emerald-700">{uploadStatus}</p>
-            ) : null}
-            {uploadError ? <p className="text-red-700">{uploadError}</p> : null}
-            {csvConfigError ? (
-              <p className="text-red-700">Could not load upload settings.</p>
-            ) : null}
-          </section>
-        ) : null}
 
         <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
           {metrics.map(([label, value]) => (
@@ -301,7 +182,7 @@ export default function Home() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="w-[280px] px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
+                    <th className="w-70 px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
                       URL
                     </th>
                     <th className="px-2 py-2 text-left text-[10px] font-medium uppercase text-gray-500">
@@ -347,7 +228,7 @@ export default function Home() {
                   ) : null}
                   {records?.records.map((record) => (
                     <tr className="hover:bg-gray-50" key={record.id}>
-                      <td className="w-[280px] max-w-[280px] px-2 py-1.5">
+                      <td className="w-70 max-w-70 px-2 py-1.5">
                         <div className="flex items-center gap-2">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
