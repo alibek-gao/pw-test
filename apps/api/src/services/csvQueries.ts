@@ -1,5 +1,9 @@
 import type { PrismaClient } from "@repo/database";
-import type { DomainCountsInput, ListRecordsInput } from "../schemas/csv.js";
+import type {
+  DomainCountsInput,
+  ListRecordsInput,
+  TopByDomainInput,
+} from "../schemas/csv.js";
 
 const visibleImportStatuses = ["COMPLETED", "COMPLETED_WITH_ERRORS"] as const;
 
@@ -36,6 +40,17 @@ type CountByRootDomain = {
 type CountByLastUpdated = {
   lastUpdated: Date;
   _count: { _all: number };
+};
+
+type SumByPage = {
+  url: string;
+  title: string;
+  _sum: { citationsCount?: number | null; mentionsCount?: number | null };
+};
+
+type SumByModel = {
+  aiModelMentioned: string;
+  _sum: { citationsCount?: number | null; mentionsCount?: number | null };
 };
 
 export const listRecords = async (
@@ -189,3 +204,66 @@ export const getLastUpdatedSeries = (prisma: PrismaClient, jobId?: string) =>
         count: date._count._all,
       })),
     );
+
+export const getRootDomains = (prisma: PrismaClient, jobId?: string) =>
+  prisma.urlRecord
+    .findMany({
+      where: getVisibleRecordsWhere(jobId),
+      distinct: ["rootDomain"],
+      select: { rootDomain: true },
+      orderBy: { rootDomain: "asc" },
+    })
+    .then((rows: { rootDomain: string }[]) =>
+      rows.map((row) => row.rootDomain),
+    );
+
+export const getTopPagesByDomain = (
+  prisma: PrismaClient,
+  input: TopByDomainInput,
+) => {
+  const where = {
+    ...getVisibleRecordsWhere(input.jobId),
+    rootDomain: input.rootDomain,
+  };
+
+  return prisma.urlRecord
+    .groupBy({
+      by: ["url", "title"],
+      where,
+      _sum: { citationsCount: true, mentionsCount: true },
+      orderBy: { _sum: { [input.metric]: "desc" } },
+      take: input.limit,
+    })
+    .then((rows: SumByPage[]) =>
+      rows.map((row) => ({
+        url: row.url,
+        title: row.title,
+        value: (row._sum[input.metric as keyof typeof row._sum] ?? 0) as number,
+      })),
+    );
+};
+
+export const getTopModelsByDomain = (
+  prisma: PrismaClient,
+  input: TopByDomainInput,
+) => {
+  const where = {
+    ...getVisibleRecordsWhere(input.jobId),
+    rootDomain: input.rootDomain,
+  };
+
+  return prisma.urlRecord
+    .groupBy({
+      by: ["aiModelMentioned"],
+      where,
+      _sum: { citationsCount: true, mentionsCount: true },
+      orderBy: { _sum: { [input.metric]: "desc" } },
+      take: input.limit,
+    })
+    .then((rows: SumByModel[]) =>
+      rows.map((row) => ({
+        model: row.aiModelMentioned,
+        value: (row._sum[input.metric as keyof typeof row._sum] ?? 0) as number,
+      })),
+    );
+};

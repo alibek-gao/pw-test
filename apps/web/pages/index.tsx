@@ -1,4 +1,5 @@
 import { CsvUploader } from "../components/CsvUploader";
+import { DomainBreakdown } from "../components/DomainBreakdown";
 import { DomainCountsChart } from "../components/DomainCountsChart";
 import { LastUpdatedSeriesChart } from "../components/LastUpdatedSeriesChart";
 import { trpc } from "../utils/trpc";
@@ -127,6 +128,8 @@ export default function Home() {
             />
           </div>
         </section>
+
+        <DomainBreakdown />
 
         <section className="grid gap-3 lg:grid-cols-[320px_1fr]">
           <div className="rounded-lg border border-stone-200 bg-white">

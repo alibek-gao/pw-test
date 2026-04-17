@@ -53,7 +53,7 @@ Current validation is intentionally focused on structural correctness. A next pa
 
 ## Upload Flow
 
-The frontend upload form lives in `apps/web/pages/index.tsx`.
+The frontend upload form lives in `apps/web/components/CsvUploader.tsx` and is embedded in the dashboard header.
 
 The current flow is:
 
@@ -97,6 +97,9 @@ It exposes:
 - `summary` for top-level dashboard metrics.
 - `domainCounts` for domain occurrence chart data.
 - `lastUpdatedSeries` for line chart data based on `last_updated`.
+- `rootDomains` for the full alphabetical list of distinct root domains used by the domain breakdown selector.
+- `topPagesByDomain` for the top pages within a selected domain, ranked by either citations or mentions.
+- `topModelsByDomain` for the top AI models within a selected domain, ranked by either citations or mentions.
 - `importErrors` for paginated row-level import errors.
 
 The query services only expose records from completed or partially completed imports. Failed imports are excluded from dashboard reads so partial cleanup or fatal parser failures do not pollute the visible dataset.
@@ -122,20 +125,23 @@ This gives atomic failure cleanup without the operational cost of wrapping the e
 
 ## Frontend Dashboard
 
-The dashboard currently includes:
+The dashboard is composed of focused components under `apps/web/components`:
 
-- CSV file picker and upload button.
-- Client-side file extension and size validation.
-- Upload success and error states.
+- `CsvUploader` owns the upload form, client-side validation, progress state, and tRPC cache invalidation on success.
+- `DomainCountsChart` and `LastUpdatedSeriesChart` render the two assignment-required charts.
+- `DomainBreakdown` wires a root domain selector and a citations/mentions toggle to two `RankedBarChart` instances for top pages and top models.
+- `RankedBarChart` is a reusable horizontal bar chart used by the domain breakdown.
+
+The page itself currently includes:
+
+- CSV file picker and upload button with file extension and size validation.
+- Upload success and error states surfaced in the uploader card.
 - Summary metrics for records, domains, average visibility, citations, mentions, and date range.
+- Horizontal bar chart of top root domains by record count.
+- Line chart of records per day based on `last_updated`.
+- Domain breakdown section: a native select with alphabetical root domains, a citations/mentions toggle, a top-pages chart, and a top-models chart.
 - Recent import jobs with status and row/error counts.
-- Paginated records table.
-- Sorting by date, domain, AI model, visibility, citations, mentions, and position.
-- Filters for domain, AI model, sentiment, and region.
-- External links to source URLs.
-- Favicons based on each record's root domain.
-
-The frontend already invalidates chart queries after upload, but the chart UI is not rendered yet. The next user-facing milestone should be adding the domain occurrence chart and the `last_updated` line chart.
+- Paginated records table with external links and favicons based on each record's root domain.
 
 ## Testing and Verification
 
@@ -164,9 +170,9 @@ All of the above pass in the current local state.
 
 ## Known Gaps
 
-- The assignment-requested charts are not displayed yet, even though backend endpoints exist.
 - Upload currently uses a Fastify route rather than a tRPC mutation.
 - Import errors are stored but not exposed in the UI.
+- The records table filter controls (domain, AI model, sentiment, region) are supported by the API but not yet surfaced in the UI.
 - CSV validation should enforce stricter numeric ranges and real calendar dates.
 - The current streaming importer is sufficient for this assignment, but production-scale imports could still add resumability and background cleanup for process-level crashes.
 - Root README still contains some starter inconsistencies, such as references to `domains.csv` and `prisma/schema/main.prisma`.
@@ -175,9 +181,8 @@ All of the above pass in the current local state.
 
 ## Recommended Next Work
 
-1. Add the domain occurrence bar chart and `last_updated` line chart to the dashboard.
-2. Decide whether to migrate upload to a simple tRPC mutation for assignment alignment or keep multipart upload and document it as an intentional production-style choice.
-3. Add an import error panel for jobs with failed rows.
+1. Decide whether to migrate upload to a simple tRPC mutation for assignment alignment or keep multipart upload and document it as an intentional production-style choice.
+2. Add an import error panel for jobs with failed rows.
+3. Surface the existing filter controls on the records table.
 4. Tighten parser validation and add tests for the new edge cases.
-5. Replace exact-match text filters with dropdowns based on available summary values.
-6. Clean up README inaccuracies and remove unused starter code if the final submission should be focused.
+5. Clean up README inaccuracies and remove unused starter code if the final submission should be focused.
