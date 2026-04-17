@@ -69,6 +69,26 @@ export const listRecords = async (
     ...(input.filters?.rootDomain
       ? { rootDomain: input.filters.rootDomain }
       : {}),
+    ...(input.search
+      ? {
+          OR: [
+            { title: { contains: input.search, mode: "insensitive" as const } },
+            { url: { contains: input.search, mode: "insensitive" as const } },
+            {
+              rootDomain: {
+                contains: input.search,
+                mode: "insensitive" as const,
+              },
+            },
+            {
+              aiModelMentioned: {
+                contains: input.search,
+                mode: "insensitive" as const,
+              },
+            },
+          ],
+        }
+      : {}),
   };
 
   const [records, totalCount] = await Promise.all([

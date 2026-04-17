@@ -33,6 +33,7 @@ export const listRecordsInput = z.object({
     ])
     .default("createdAt"),
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
+  search: z.string().trim().min(1).optional(),
   filters: z
     .object({
       aiModelMentioned: z.string().min(1).optional(),
