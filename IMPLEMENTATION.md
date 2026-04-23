@@ -204,3 +204,11 @@ All of the above pass in the current local state.
 6. Make upload async: persist the `ImportJob` as `PENDING`, return `{ jobId }` immediately, and run `importUrlCsvStream` as a fire-and-forget task (`void importRows(jobId)`); the client polls `jobStatus` and invalidates reads on terminal status. A durable queue (BullMQ/Redis) would be the next step beyond that.
 7. Real-time upload progress in two layers: (a) bytes uploaded via `XMLHttpRequest` `upload.onprogress` on the client (native `fetch` still lacks upload progress in most browsers); (b) rows processed via `processedRows`/`totalRows` counters on `ImportJob`, updated in batches by the importer and surfaced by polling `jobStatus`. SSE or WebSocket would be a nicer transport than polling at scale.
 8. Data export: add a plain Fastify route `GET /exports/records.csv` that accepts the same filters as `listRecords`, streams rows from Prisma in chunks through `csv-stringify`, and sets `Content-Disposition: attachment`. Kept off tRPC for the same reason as upload — binary/large responses belong on a streaming HTTP route.
+
+## Competitor mapping
+
+The "Top competitors" chart derives competitors from the `competitorMentioned` field on `UrlRecord` rows belonging to the selected `rootDomain`. It then looks up those names in the same `UrlRecord` table to compute their aggregated metric sums.
+
+**The current search method is known to be unreliable.** `competitorMentioned` values are free-text strings (e.g. `"openai"`) that are matched against `rootDomain` values (e.g. `"openai.com"`) using a case-insensitive `contains` query. This produces false positives — `"ai"` would match `"openai.com"`, `"anthropic.ai"`, and any other domain containing that substring. It also misses competitors whose name does not appear as a substring of any `rootDomain` in the dataset, and produces no results at all when a domain has no `competitorMentioned` values.
+
+In production, a dedicated `Competitor` table (or `DomainCompetitor` join table) would be the right model — mapping each domain to its known competitors explicitly, independent of what appears in the CSV data. This would allow curated, stable competitor sets, exact `rootDomain` lookups, and support for competitors not yet present in the dataset.

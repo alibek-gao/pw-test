@@ -6,14 +6,6 @@ import { LastUpdatedSeriesChart } from "../components/LastUpdatedSeriesChart";
 import { RecordsTable } from "../components/RecordsTable";
 import { trpc } from "../utils/trpc";
 
-const formatDate = (value: string | null | Date) => {
-  if (!value) return "No data";
-  return value.toString().slice(0, 10);
-};
-
-const formatNumber = (value: number | null | undefined) =>
-  value == null ? "No data" : new Intl.NumberFormat("en-US").format(value);
-
 const statusClassName = (status: string) => {
   if (status === "COMPLETED") return "bg-emerald-100/70 text-emerald-700";
   if (status === "COMPLETED_WITH_ERRORS")
@@ -29,11 +21,6 @@ export default function Home() {
     isLoading: areJobsLoading,
   } = trpc.csv.listJobs.useQuery({ limit: 5 });
   const {
-    data: summary,
-    isFetching: isSummaryFetching,
-    isLoading: isSummaryLoading,
-  } = trpc.csv.summary.useQuery();
-  const {
     data: domainCitationsCounts,
     isFetching: areDomainCitationsCountsFetching,
     isLoading: areDomainCitationsCountsLoading,
@@ -44,30 +31,8 @@ export default function Home() {
     isLoading: isLastUpdatedSeriesLoading,
   } = trpc.csv.lastUpdatedSeries.useQuery();
   const hasJobsData = jobs !== undefined;
-  const hasSummaryData = summary !== undefined;
   const hasDomainCitationsCountsData = domainCitationsCounts !== undefined;
   const hasLastUpdatedSeriesData = lastUpdatedSeries !== undefined;
-
-  const metrics = [
-    ["Records", formatNumber(summary?.totalRecords)],
-    ["Domains", formatNumber(summary?.uniqueRootDomains)],
-    [
-      "Visibility",
-      summary?.averageVisibilityScore == null
-        ? "No data"
-        : summary.averageVisibilityScore.toFixed(1),
-    ],
-    ["Citations", formatNumber(summary?.totalCitations)],
-    ["Mentions", formatNumber(summary?.totalMentions)],
-    [
-      "Date Range",
-      summary?.dateRange.from
-        ? `${formatDate(summary.dateRange.from)} to ${formatDate(
-            summary.dateRange.to,
-          )}`
-        : "No data",
-    ],
-  ];
 
   return (
     <main className="min-h-screen bg-stone-50 p-3 text-gray-900">
@@ -83,31 +48,6 @@ export default function Home() {
           </div>
           <CsvUploader />
         </header>
-
-        <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-          {metrics.map(([label, value]) => (
-            <div
-              className="rounded-lg border border-stone-200 bg-white px-3 py-3"
-              key={label}
-            >
-              <p className="text-[10px] font-semibold uppercase text-gray-500">
-                {label}
-                <DelayedLoadingText
-                  hasData={hasSummaryData}
-                  isLoading={isSummaryFetching}
-                />
-              </p>
-              <p
-                className="mt-1 truncate text-lg font-semibold text-gray-900"
-                title={
-                  isSummaryLoading && !hasSummaryData ? "Loading..." : value
-                }
-              >
-                {isSummaryLoading && !hasSummaryData ? "Loading..." : value}
-              </p>
-            </div>
-          ))}
-        </section>
 
         <section className="grid gap-3 lg:grid-cols-2">
           <div className="rounded-lg border border-stone-200 bg-white">

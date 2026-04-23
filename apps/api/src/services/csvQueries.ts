@@ -2,6 +2,7 @@ import type { PrismaClient } from "@repo/database";
 import type {
   DomainCountsInput,
   ListRecordsInput,
+  SummaryInput,
   TopByDomainInput,
 } from "../schemas/csv.js";
 
@@ -50,6 +51,16 @@ type SumByPage = {
 
 type SumByModel = {
   aiModelMentioned: string;
+  _sum: { citationsCount?: number | null; mentionsCount?: number | null };
+};
+
+type SumByCategory = {
+  queryCategory: string;
+  _sum: { citationsCount?: number | null; mentionsCount?: number | null };
+};
+
+type SumByRootDomain = {
+  rootDomain: string;
   _sum: { citationsCount?: number | null; mentionsCount?: number | null };
 };
 
@@ -110,8 +121,14 @@ export const listRecords = async (
   };
 };
 
-export const getSummary = async (prisma: PrismaClient, jobId?: string) => {
-  const where = getVisibleRecordsWhere(jobId);
+export const getSummary = async (
+  prisma: PrismaClient,
+  input?: SummaryInput,
+) => {
+  const where = {
+    ...getVisibleRecordsWhere(input?.jobId),
+    ...(input?.rootDomain ? { rootDomain: input.rootDomain } : {}),
+  };
 
   const [
     totalRecords,
@@ -275,6 +292,31 @@ export const getTopPagesByDomain = (
     );
 };
 
+export const getTopCategoriesByDomain = (
+  prisma: PrismaClient,
+  input: TopByDomainInput,
+) => {
+  const where = {
+    ...getVisibleRecordsWhere(input.jobId),
+    rootDomain: input.rootDomain,
+  };
+
+  return prisma.urlRecord
+    .groupBy({
+      by: ["queryCategory"],
+      where,
+      _sum: { citationsCount: true, mentionsCount: true },
+      orderBy: { _sum: { [input.metric]: "desc" } },
+      take: input.limit,
+    })
+    .then((rows: SumByCategory[]) =>
+      rows.map((row) => ({
+        category: row.queryCategory,
+        value: (row._sum[input.metric as keyof typeof row._sum] ?? 0) as number,
+      })),
+    );
+};
+
 export const getTopModelsByDomain = (
   prisma: PrismaClient,
   input: TopByDomainInput,
@@ -298,4 +340,52 @@ export const getTopModelsByDomain = (
         value: (row._sum[input.metric as keyof typeof row._sum] ?? 0) as number,
       })),
     );
+};
+
+export const getTopCompetitorsByDomain = async (
+  prisma: PrismaClient,
+  input: TopByDomainInput,
+) => {
+  const selectedWhere = {
+    ...getVisibleRecordsWhere(input.jobId),
+    rootDomain: input.rootDomain,
+  };
+
+  const competitorRows = await prisma.urlRecord.findMany({
+    where: { ...selectedWhere, competitorMentioned: { not: "" } },
+    distinct: ["competitorMentioned"],
+    select: { competitorMentioned: true },
+  });
+
+  const competitors = Array.from(
+    new Set(
+      competitorRows
+        .map((r: { competitorMentioned: string }) =>
+          r.competitorMentioned.toLowerCase(),
+        )
+        .filter(Boolean),
+    ),
+  );
+
+  const rows = await prisma.urlRecord.groupBy({
+    by: ["rootDomain"],
+    where: {
+      ...getVisibleRecordsWhere(input.jobId),
+      OR: [
+        { rootDomain: input.rootDomain },
+        ...competitors.map((c) => ({
+          rootDomain: { contains: c, mode: "insensitive" as const },
+        })),
+      ],
+    },
+    _sum: { citationsCount: true, mentionsCount: true },
+    orderBy: { _sum: { [input.metric]: "desc" } },
+    take: input.limit,
+  });
+
+  return (rows as SumByRootDomain[]).map((row) => ({
+    name: row.rootDomain,
+    value: (row._sum[input.metric as keyof typeof row._sum] ?? 0) as number,
+    isSelected: row.rootDomain === input.rootDomain,
+  }));
 };

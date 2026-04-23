@@ -6,6 +6,15 @@ export const jobScopedInput = z
   })
   .optional();
 
+export const summaryInput = z
+  .object({
+    jobId: z.string().min(1).optional(),
+    rootDomain: z.string().min(1).optional(),
+  })
+  .optional();
+
+export type SummaryInput = z.infer<typeof summaryInput>;
+
 export const listJobsInput = z
   .object({
     limit: z.number().int().min(1).max(50).default(10),

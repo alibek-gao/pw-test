@@ -6,6 +6,7 @@ import {
   jobStatusInput,
   listJobsInput,
   listRecordsInput,
+  summaryInput,
   topByDomainInput,
 } from "../schemas/csv.js";
 import {
@@ -14,6 +15,8 @@ import {
   getLastUpdatedSeries,
   getRootDomains,
   getSummary,
+  getTopCategoriesByDomain,
+  getTopCompetitorsByDomain,
   getTopModelsByDomain,
   getTopPagesByDomain,
   listRecords,
@@ -40,11 +43,9 @@ export const csvRouter = router({
     .input(listRecordsInput)
     .query(({ ctx, input }) => listRecords(ctx.prisma, input)),
 
-  summary: publicProcedure
-    .input(jobScopedInput)
-    .query(async ({ ctx, input }) => {
-      return getSummary(ctx.prisma, input?.jobId);
-    }),
+  summary: publicProcedure.input(summaryInput).query(async ({ ctx, input }) => {
+    return getSummary(ctx.prisma, input);
+  }),
 
   domainCitationsCounts: publicProcedure
     .input(domainCitationsCountsInput)
@@ -69,6 +70,14 @@ export const csvRouter = router({
   topModelsByDomain: publicProcedure
     .input(topByDomainInput)
     .query(({ ctx, input }) => getTopModelsByDomain(ctx.prisma, input)),
+
+  topCategoriesByDomain: publicProcedure
+    .input(topByDomainInput)
+    .query(({ ctx, input }) => getTopCategoriesByDomain(ctx.prisma, input)),
+
+  topCompetitorsByDomain: publicProcedure
+    .input(topByDomainInput)
+    .query(({ ctx, input }) => getTopCompetitorsByDomain(ctx.prisma, input)),
 
   importErrors: publicProcedure
     .input(importErrorsInput)

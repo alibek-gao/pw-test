@@ -9,7 +9,7 @@ import {
 } from "recharts";
 
 type RankedBarChartProps = {
-  data: { label: string; value: number }[] | undefined;
+  data: { label: string; value: number; fill?: string }[] | undefined;
   isLoading: boolean;
   emptyText?: string;
   loadingText?: string;
@@ -79,7 +79,20 @@ export const RankedBarChart = ({
             cursor={{ fill: "#f8fafc" }}
             formatter={(value) => [value as number, valueLabel]}
           />
-          <Bar dataKey="value" fill="#4f46e5" radius={[0, 3, 3, 0]} />
+          <Bar
+            dataKey="value"
+            fill="#4f46e5"
+            shape={(props: any) => (
+              <rect
+                fill={props.fill}
+                height={props.height}
+                rx={3}
+                width={Math.max(0, props.width)}
+                x={props.x}
+                y={props.y}
+              />
+            )}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
