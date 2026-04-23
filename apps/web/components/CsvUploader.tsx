@@ -28,7 +28,7 @@ export const CsvUploader = () => {
     Promise.all([
       utils.csv.listJobs.invalidate(),
       utils.csv.summary.invalidate(),
-      utils.csv.domainCounts.invalidate(),
+      utils.csv.domainCitationsCounts.invalidate(),
       utils.csv.lastUpdatedSeries.invalidate(),
       utils.csv.listRecords.invalidate(),
       utils.csv.rootDomains.invalidate(),
@@ -171,8 +171,7 @@ export const CsvUploader = () => {
 
       {isProcessing ? (
         <p className="text-xs text-emerald-700">
-          Upload complete.{" "}
-          <span className="animate-pulse">Processing...</span>
+          Upload complete. <span className="animate-pulse">Processing...</span>
         </p>
       ) : null}
 

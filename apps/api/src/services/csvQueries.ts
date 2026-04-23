@@ -34,7 +34,7 @@ type CountByRegion = {
 
 type CountByRootDomain = {
   rootDomain: string;
-  _count: { _all: number };
+  _sum: { citationsCount: number | null };
 };
 
 type CountByLastUpdated = {
@@ -191,7 +191,7 @@ export const getSummary = async (prisma: PrismaClient, jobId?: string) => {
   };
 };
 
-export const getDomainCounts = (
+export const getDomainCitationsCounts = (
   prisma: PrismaClient,
   input: DomainCountsInput,
 ) =>
@@ -199,14 +199,14 @@ export const getDomainCounts = (
     .groupBy({
       by: ["rootDomain"],
       where: getVisibleRecordsWhere(input?.jobId),
-      _count: { _all: true },
-      orderBy: { _count: { rootDomain: "desc" } },
+      _sum: { citationsCount: true },
+      orderBy: { _sum: { citationsCount: "desc" } },
       take: input?.limit ?? 15,
     })
     .then((domains: CountByRootDomain[]) =>
       domains.map((domain) => ({
         rootDomain: domain.rootDomain,
-        count: domain._count._all,
+        count: domain._sum.citationsCount ?? 0,
       })),
     );
 

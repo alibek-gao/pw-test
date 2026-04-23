@@ -44,7 +44,7 @@ export const listRecordsInput = z.object({
     .optional(),
 });
 
-export const domainCountsInput = z
+export const domainCitationsCountsInput = z
   .object({
     jobId: z.string().min(1).optional(),
     limit: z.number().int().min(1).max(50).default(15),
@@ -66,6 +66,6 @@ export const topByDomainInput = z.object({
 
 export type ListJobsInput = z.infer<typeof listJobsInput>;
 export type ListRecordsInput = z.infer<typeof listRecordsInput>;
-export type DomainCountsInput = z.infer<typeof domainCountsInput>;
+export type DomainCountsInput = z.infer<typeof domainCitationsCountsInput>;
 export type ImportErrorsInput = z.infer<typeof importErrorsInput>;
 export type TopByDomainInput = z.infer<typeof topByDomainInput>;

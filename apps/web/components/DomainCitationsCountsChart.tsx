@@ -8,17 +8,17 @@ import {
   YAxis,
 } from "recharts";
 
-type DomainCountsChartProps = {
+type DomainCitationsCountsChartProps = {
   data: { rootDomain: string; count: number }[] | undefined;
   isLoading: boolean;
 };
 
 const BAR_FILL = "#4f46e5";
 
-export const DomainCountsChart = ({
+export const DomainCitationsCountsChart = ({
   data,
   isLoading,
-}: DomainCountsChartProps) => {
+}: DomainCitationsCountsChartProps) => {
   const hasResolvedData = data !== undefined;
 
   if (isLoading && !hasResolvedData) {

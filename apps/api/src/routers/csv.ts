@@ -1,6 +1,6 @@
 import { uploadConfig } from "../config.js";
 import {
-  domainCountsInput,
+  domainCitationsCountsInput,
   importErrorsInput,
   jobScopedInput,
   jobStatusInput,
@@ -10,7 +10,7 @@ import {
 } from "../schemas/csv.js";
 import {
   getAiModels,
-  getDomainCounts,
+  getDomainCitationsCounts,
   getLastUpdatedSeries,
   getRootDomains,
   getSummary,
@@ -46,9 +46,9 @@ export const csvRouter = router({
       return getSummary(ctx.prisma, input?.jobId);
     }),
 
-  domainCounts: publicProcedure
-    .input(domainCountsInput)
-    .query(({ ctx, input }) => getDomainCounts(ctx.prisma, input)),
+  domainCitationsCounts: publicProcedure
+    .input(domainCitationsCountsInput)
+    .query(({ ctx, input }) => getDomainCitationsCounts(ctx.prisma, input)),
 
   lastUpdatedSeries: publicProcedure
     .input(jobScopedInput)

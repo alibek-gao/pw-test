@@ -1,7 +1,7 @@
 import { CsvUploader } from "../components/CsvUploader";
 import { DelayedLoadingText } from "../components/DelayedLoadingText";
 import { DomainBreakdown } from "../components/DomainBreakdown";
-import { DomainCountsChart } from "../components/DomainCountsChart";
+import { DomainCitationsCountsChart } from "../components/DomainCitationsCountsChart";
 import { LastUpdatedSeriesChart } from "../components/LastUpdatedSeriesChart";
 import { RecordsTable } from "../components/RecordsTable";
 import { trpc } from "../utils/trpc";
@@ -34,10 +34,10 @@ export default function Home() {
     isLoading: isSummaryLoading,
   } = trpc.csv.summary.useQuery();
   const {
-    data: domainCounts,
-    isFetching: areDomainCountsFetching,
-    isLoading: areDomainCountsLoading,
-  } = trpc.csv.domainCounts.useQuery({ limit: 10 });
+    data: domainCitationsCounts,
+    isFetching: areDomainCitationsCountsFetching,
+    isLoading: areDomainCitationsCountsLoading,
+  } = trpc.csv.domainCitationsCounts.useQuery({ limit: 10 });
   const {
     data: lastUpdatedSeries,
     isFetching: isLastUpdatedSeriesFetching,
@@ -45,7 +45,7 @@ export default function Home() {
   } = trpc.csv.lastUpdatedSeries.useQuery();
   const hasJobsData = jobs !== undefined;
   const hasSummaryData = summary !== undefined;
-  const hasDomainCountsData = domainCounts !== undefined;
+  const hasDomainCitationsCountsData = domainCitationsCounts !== undefined;
   const hasLastUpdatedSeriesData = lastUpdatedSeries !== undefined;
 
   const metrics = [
@@ -130,14 +130,14 @@ export default function Home() {
               <h2 className="text-[10px] font-semibold uppercase text-gray-600">
                 Top domains
                 <DelayedLoadingText
-                  hasData={hasDomainCountsData}
-                  isLoading={areDomainCountsFetching}
+                  hasData={hasDomainCitationsCountsData}
+                  isLoading={areDomainCitationsCountsFetching}
                 />
               </h2>
             </div>
-            <DomainCountsChart
-              data={domainCounts}
-              isLoading={areDomainCountsLoading}
+            <DomainCitationsCountsChart
+              data={domainCitationsCounts}
+              isLoading={areDomainCitationsCountsLoading}
             />
           </div>
         </section>
